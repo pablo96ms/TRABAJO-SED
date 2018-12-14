@@ -346,3 +346,146 @@ architecture Behavioral of clk_divider is
 clk_out<=temp;
 
 end Behavioral;
+
+
+
+
+
+
+
+NUEVA MÁQUINA DE ESTADOS
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use STD.textio.all;
+use IEEE.std_logic_textio.all;
+library UNISIM;
+use UNISIM.VComponents.all;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity elevator is
+generic(n:positive:=2);
+    Port ( piso: in std_logic_vector(n downto 0);--piso al que el usuario desea ir mediante 4 botones
+             clk, nivel, reset_n: in STD_LOGIC;--siempre que se active reset volvemos al piso 0
+           puerta: out std_logic;--abierta(0), cerrada(1)
+           count:out std_logic_vector(n-1 downto 0);
+           motor: out std_logic_vector(1 downto 0);--parado(00), bajando(01), subiendo(10), en marcha(11)
+           piso_destino : in STD_LOGIC_VECTOR(n downto 0));--piso en el que el ascensor está en momento dado(debe ser in)
+end elevator;
+
+architecture Behavioral of elevator is
+type state_type is(p0,p1,p2,p3,p4,parado,bajando,subiendo,en_marcha,inicial,abriendo,cerrando);--definición de los estados tanto de la puerta como del motor
+signal actual,siguiente:state_type;--estado actual y estado siguiente
+signal bot:std_logic_vector(n downto 0);--almacena el boton pulsado
+signal piso_ini:std_logic_vector(n downto 0);--piso en el que se está actualmente
+signal temp:std_logic_vector(n-1 downto 0):="00";
+
+begin
+
+sync_proc:process(clk,reset_n)--bloque secuencial para calcular el estado siguiente
+    begin
+    if (reset_n='1') then
+        actual<=inicial;
+        elsif(rising_edge(clk))then
+            case(actual)is
+                when inicial=> --primer estado en el que se encuentra el ascensor, queremos que inicialmente solamente se nivele
+                    if nivel='1' then
+                        actual<=parado;
+                    end if;
+                when parado=> --esperamos la pulsación de un botón
+                    if ((bot/="000") and (bot/=piso_destino))then --el operador "/=" devuelve un valor booleano
+                        actual<=cerrando;
+                            puerta<='0';--abierta
+                    end if;
+                when cerrando=>
+                    puerta<='1'; --se cierra la puerta
+                    actual<=en_marcha;
+                when en_marcha=> --el ascensor va hacia el piso deseado
+                    if((bot=piso_destino) and (nivel='1'))then
+                        actual<=abriendo;
+                    end if;
+                when abriendo=> --se abre la puerta del ascensor
+                    puerta<='0';
+                    actual<=parado;
+                when others=>
+                    puerta<='1';
+                    actual<=parado;
+            end case;
+    end if;
+end process;
+
+
+salida:process(piso)
+       begin
+        case(actual)is
+            when inicial=> --al iniciar el funcionamiento, es posible que el ascensor esté entre dos pisos
+                if(piso="001")then
+                    motor<="01";--bajando
+                else
+                    motor<="10";--subiendo
+                end if;
+                puerta<='0';--abierta
+             when parado=>
+                motor<="00";--parado
+                puerta<='0';--abierta
+             when cerrando=>
+                motor<="00";--parado
+                --¿qué podemos hacer para indicar que la puerta puede estar abierta o cerrada?
+                if(rising_edge(clk))then
+                    if temp="11" then
+                        temp<="00";
+                        puerta<='1';--puerta cerrada
+                    else 
+                        temp<=temp+1;
+                        puerta<='0';--puerta abierta
+                    end if;
+                 end if;
+                
+                
+                when en_marcha=>
+                    if(bot<piso_ini)then --si el piso al que quiero ir está por debajo del piso en el que estoy, entonces bajo
+                        motor<="01";--bajar
+                    else
+                        motor<="10";--subir
+                    end if;
+                    puerta<='1';--puerta cerrada
+                when abriendo=>
+                    motor<="00";--motor parado
+                    puerta<='0';--abrir puerta
+            end case;
+end process;
+                    
+                
+                
+memoria:process(reset_n,clk) --en este process queremos capturar la pulsación del botón y el piso deonde se encuentra
+        begin
+            if reset_n='1' then
+                bot<="000";
+                piso_ini<=piso_destino;
+            elsif rising_edge(clk)then
+                if actual=parado then
+                    if((bot="001")or(bot="010")or(bot="011")or(bot="100"))then
+                    bot<=piso;
+                    else
+                        bot<="000"; --cualquier otra combinación no vale
+                    end if;
+                    piso_ini<=piso;
+                end if;
+            end if;
+        end process;
+            
+            
+
+
+
+end Behavioral;
