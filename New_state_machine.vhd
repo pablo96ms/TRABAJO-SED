@@ -23,7 +23,7 @@ Entity state_machine is
 		--sensor_apertura: IN std_logic; 
 		boton_piso, piso_actual : IN std_logic_vector(N-1 downto 0); 
 		motor_puerta, motor_ascensor: OUT std_logic_vector(1 downto 0);
-		destino_fsm: OUT std_logic _vector (N-1 downto 0);
+		destino_fsm: OUT std_logic _vector (N-1 downto 0)
 		);
 
 End entity;	
