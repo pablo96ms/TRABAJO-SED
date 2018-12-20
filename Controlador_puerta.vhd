@@ -9,7 +9,7 @@ Entity controlador_puerta is
 
 	Port (
 		motor_puerta: IN std_logic_vector(1 downto 0);
-		sensor_presencia, clk: IN std_logic;
+		sensor_presencia, clk, reset: IN std_logic;
 		sensor_puerta: OUT std_logic;
 		puerta_display: OUT std_logic_vector (1 downto 0) --Manda al display el estado de la puerta a cada segundo
 		);
@@ -24,7 +24,10 @@ Begin
 
 		Variable cont: natural := 0; 
 		Begin 
-			if (sensor_presencia ='1') then -- Problema: si el las puertas estan abriendose y pulsamos sensor presencia se iniciaria este bucle. 
+			if (reset ='1') then 
+				puerta_display <= "11"; --Puerta cerrada, estado de inicio
+				sensor_puerta <= '1'; 
+			elsif (sensor_presencia ='1') then -- Problema: si el las puertas estan abriendose y pulsamos sensor presencia se iniciaria este bucle. 
 				if (cont /= 0) then 
 					cont := cont -1; 
 					if (cont = 2) then -- Valoro los diferentes valores de la cuenta y saco el estado de la puerta que corresponda
