@@ -12,7 +12,6 @@ Entity input_decoder is
     
     Generic (N: natural := 4); -- Numero de pisos, por cada piso un boton 
 	Port (
-		clk, rst: IN std_logic;
 		boton_placa: IN std_logic_vector(N-1 downto 0);
 		boton_bin: OUT std_logic_vector(2 downto 0)
 		);
