@@ -20,7 +20,7 @@ Architecture Behavioral of controlador_puerta is
 
 Begin 
 
-	Process (clk, sensor_presencia) 
+	Process (clk, sensor_presencia, reset) 
 
 		Variable cont: natural := 0; 
 		Begin 
