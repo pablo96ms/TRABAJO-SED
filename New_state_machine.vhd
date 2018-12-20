@@ -14,7 +14,7 @@ use UNISIM.VComponents.all;
 
 Entity state_machine is 
 
-	Generic (N: natural:4);
+	Generic (N: natural:= 4);
 	Port (
 		sensor_puerta, stop_emergencia, reset, clk, sensor_presencia : IN std_logic;
 		-- sensor_puerta : 1 cerrada/ 0 abierta
@@ -106,7 +106,7 @@ Begin
 
     		case (actual) is 
     			when incio => -- Motor del ascensor y de las puertas parados
-    				motor_puerta <= "11";
+    				motor_puerta <= "11"; --Motor puerta parado con puertas cerradas
     				motor_ascensor <= "11";
 
     			when abrir => -- Puertas abriéndose y ascensor parado
@@ -114,7 +114,7 @@ Begin
     				motor_ascensor <= "11";
 				
     			when reposo => -- puertas abiertas y ascensor parado 
-    				motor_puerta <= "11";
+    				motor_puerta <= "00"; --Motor puerta parado con puertas abiertas
     				motor_ascensor<= "11";
 
     			when cerrar => -- Puertas cerrándose y motor parado 
