@@ -22,7 +22,8 @@ Entity state_machine is
 		-- Discutir la frecuencia del clk
 		--sensor_apertura: IN std_logic; 
 		boton_piso, piso_actual : IN std_logic_vector(N-1 downto 0); 
-		motor_puerta, motor_ascensor: OUT std_logic_vector(1 downto 0) 
+		motor_puerta, motor_ascensor: OUT std_logic_vector(1 downto 0);
+		destino_fsm: OUT std_logic _vector (N-1 downto 0);
 		);
 
 End entity;	
@@ -33,6 +34,7 @@ Architecture Behavioral of state_machine is
 type state_type is (incio, abrir, reposo, cerrar, en_marcha, emergencia);
 signal actual, siguiente: state_type; 
 signal boton_piso_op, piso_actual_op : signed (N-1 downto 0); -- Señales para hacer comparación entre diferentes pisos 
+signal destino: std_logic_vector (N-1 downto 0);
 
 Begin 
 
@@ -64,7 +66,11 @@ Begin
 
                     when reposo => --Ascensor en reposo, permanece hasta que no pulsamos un piso diferente
                         if (boton_piso /= piso_actual and boton/= "000") then 
+				
+			    destino <= boton_piso; --Guardo el pulso del boton en una señal 
+			    boton_piso_op <= to_signed (boton_piso); --Convierto el pulso del boton en un signed
                             actual <= cerrar;
+			    
                         end if; 
 
                     when cerrar => -- Cerrando puertas
@@ -77,7 +83,7 @@ Begin
                         end if; 
 
                     when en_marcha => -- Ascensor subiendo o bajando 
-                        if (boton_piso = piso_actual) then 
+                        if (destino = piso_actual) then 
                             actual <= abrir; 
                         elsif (stop_emergencia = '1') then 
                             actual <= emergencia; 
@@ -95,7 +101,7 @@ Begin
     output_decode: process (actual)
     	begin
 
-    		boton_piso_op <= to_signed (boton_piso);
+    		--boton_piso_op <= to_signed (boton_piso);
     		piso_actual_op <= to_signed (piso_actual);
 
     		case (actual) is 
@@ -106,7 +112,7 @@ Begin
     			when abrir => -- Puertas abriéndose y ascensor parado
     				motor_puerta <= "01";
     				motor_ascensor <= "11";
-
+				
     			when reposo => -- puertas abiertas y ascensor parado 
     				motor_puerta <= "11";
     				motor_ascensor<= "11";
@@ -114,9 +120,10 @@ Begin
     			when cerrar => -- Puertas cerrándose y motor parado 
     				motor_puerta <= "10";
     				motor_ascensor <= "11";
+				destino_fsm <= destino; -- No se si tengo que poner esta salida en todos los estados para que se mantenga
 
     			when en_marcha =>  -- Puertas cerradas 
-    				motor_puerta <= "11";
+    				motor_puerta <= "11";				
     				if ((boton_piso_op - piso_actual_op) > 0) then -- Si el piso requerido está por encima del actual, le motor irá hacia arriba (10)
     					motor_ascensor <= "10";
     				else 
@@ -126,6 +133,7 @@ Begin
     			when emergencia => -- Cuando se pulsa el boton de emergencia el ascensor se para y permanece cerrado
     				motor_puerta <= "11";
     				motor_ascensor <= "11";
+				
 
     		end case;
     End process;
