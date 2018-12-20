@@ -65,7 +65,7 @@ Begin
                         end if; 
 
                     when reposo => --Ascensor en reposo, permanece hasta que no pulsamos un piso diferente
-                        if (boton_piso /= piso_actual and boton/= "000") then 
+                        if (boton_piso /= piso_actual and boton_piso/= "000") then --No se si poner boton_piso o destino en el if
 				
 			    destino <= boton_piso; --Guardo el pulso del boton en una señal 
 			    boton_piso_op <= to_signed (boton_piso); --Convierto el pulso del boton en un signed
