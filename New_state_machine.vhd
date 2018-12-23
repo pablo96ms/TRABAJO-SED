@@ -23,7 +23,7 @@ Entity state_machine is
 		--sensor_apertura: IN std_logic; 
 		boton_piso, piso_actual : IN std_logic_vector(N-1 downto 0); 
 		motor_puerta, motor_ascensor: OUT std_logic_vector(1 downto 0);
-		destino_fsm: OUT std_logic _vector (N-1 downto 0)
+		destino_fsm: OUT std_logic_vector (N-1 downto 0)
 		);
 
 End entity;	
@@ -31,7 +31,7 @@ End entity;
 
 Architecture Behavioral of state_machine is 
 
-type state_type is (incio, abrir, reposo, cerrar, en_marcha, emergencia);
+type state_type is (inicio, abrir, reposo, cerrar, en_marcha, emergencia);
 signal actual, siguiente: state_type; 
 signal boton_piso_op, piso_actual_op : signed (N-1 downto 0); -- Señales para hacer comparación entre diferentes pisos 
 signal destino: std_logic_vector (N-1 downto 0);
@@ -51,7 +51,7 @@ Begin
 
 	next_state_decode: process (actual,sensor_puerta, stop_emergencia, sensor_presencia, boton_piso, piso_actual) --proceso para calcular el siguiente estado 
 		begin 
-			siguiente <= incio; 
+			siguiente <= inicio; 
 
 			case (actual) is 
                      when inicio => -- Estado de comienzo de simulacion; para salir de este estado hay que pulsar el botón del primer piso
@@ -68,7 +68,7 @@ Begin
                         if (boton_piso /= piso_actual and boton_piso/= "000") then --No se si poner boton_piso o destino en el if
 				
 			    destino <= boton_piso; --Guardo el pulso del boton en una señal 
-			    boton_piso_op <= to_signed (boton_piso); --Convierto el pulso del boton en un signed
+			    boton_piso_op <= signed(boton_piso); --Convierto el pulso del boton en un signed
                             actual <= cerrar;
 			    
                         end if; 
@@ -102,10 +102,10 @@ Begin
     	begin
 
     		--boton_piso_op <= to_signed (boton_piso);
-    		piso_actual_op <= to_signed (piso_actual);
+    		piso_actual_op <= signed (piso_actual);
 
     		case (actual) is 
-    			when incio => -- Motor del ascensor y de las puertas parados
+    			when inicio => -- Motor del ascensor y de las puertas parados
     				motor_puerta <= "11"; --Motor puerta parado con puertas cerradas
     				motor_ascensor <= "11";
 
@@ -136,7 +136,8 @@ Begin
 				
 
     		end case;
-    End process;
+    end process;
+end Behavioral; 
 
 
 
