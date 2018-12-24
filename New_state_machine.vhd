@@ -138,6 +138,85 @@ Begin
     		end case;
     End process;
 
+			
+	
+--TESTBENCH			
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use STD.textio.all;
+use IEEE.std_logic_textio.all;
+library UNISIM;
+use UNISIM.VComponents.all;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity state_machine_tb is
+--  Port ( );
+end state_machine_tb;
+
+architecture Behavioral of state_machine_tb is
+    component state_machine is 
+
+	   Generic (N: natural:= 4);
+	   Port (
+		  sensor_puerta, stop_emergencia, reset, clk, sensor_presencia : IN std_logic;
+		  boton_piso, piso_actual : IN std_logic_vector(N-1 downto 0); 
+		  motor_puerta, motor_ascensor: OUT std_logic_vector(1 downto 0);
+		  destino_fsm: OUT std_logic_vector (N-1 downto 0)
+		    );
+
+    end component;	
+
+signal sensor_puerta_tb,stop_emer_tb,reset_tb,clk_tb,sensor_presencia_tb:std_logic;
+signal boton_piso_tb, piso_actual_tb : std_logic_vector(3 downto 0):="0000";
+signal motor_puerta_tb, motor_ascensor_tb:  std_logic_vector(1 downto 0);
+signal destino_fsm_tb: std_logic_vector (3 downto 0);
+
+begin
+    inst_state_machine:state_machine port map(
+    sensor_puerta=>sensor_puerta_tb,
+    stop_emergencia=>stop_emer_tb,
+    reset=>reset_tb,
+    clk=>clk_tb,
+    sensor_presencia=>sensor_presencia_tb,
+    boton_piso=>boton_piso_tb,
+    piso_actual=>piso_actual_tb,
+    motor_puerta=>motor_puerta_tb,
+    motor_ascensor=>motor_ascensor_tb,
+    destino_fsm=>destino_fsm_tb
+    );
+    
+    
+    clk_tb<=not clk_tb after 30ns;
+    reset_tb<='0' after 50ns,'1' after 80ns,'0' after 100ns;
+    stop_emer_tb<='0' after 200ns,'1' after 250ns,'0'after 280ns;
+    sensor_puerta_tb<='0' after 70ns,'1' after 110ns,'0' after 150ns;
+    sensor_presencia_tb<='0' after 100ns,'1' after 160ns;
+            process
+                begin
+                    wait for 50ns;
+                    boton_piso_tb<="0100";
+                    wait for 20 ns;
+                    boton_piso_tb<="0010";
+                    wait for 40ns;
+                    boton_piso_tb<="0001";
+                    wait for 30ns;
+                    boton_piso_tb<="0011";
+                    wait for 40ns;
+                    boton_piso_tb<="0000";
+            end process;
+
+
+end Behavioral;
 
 
 
