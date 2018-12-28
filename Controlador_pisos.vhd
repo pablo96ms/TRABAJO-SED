@@ -9,7 +9,7 @@ use ieee.std_logic_textio.all;
 
 Entity controlador_pisos is 
 
-	Generic (N: natural := 4); --Número de pisos 
+	Generic (N: natural := 3);
 	Port (
 		clk, reset: IN std_logic;
 		motor_ascensor: IN std_logic_vector(1 downto 0);
