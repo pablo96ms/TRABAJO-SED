@@ -97,4 +97,57 @@ Begin
 
 
 
+TESTBENCH
+				
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
 
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity Controlador_Puerta_tb is
+--  Port ( );
+end Controlador_Puerta_tb;
+
+architecture Behavioral of Controlador_Puerta_tb is
+    component controlador_puerta is 
+
+	   Port (
+		  motor_puerta: IN std_logic_vector(1 downto 0);
+		  sensor_presencia, clk, reset: IN std_logic;
+		  sensor_puerta: OUT std_logic;
+		  puerta_display: OUT std_logic_vector (1 downto 0) --Manda al display el estado de la puerta a cada segundo
+		);
+    End component;	
+    
+signal motor_puerta_tb: std_logic_vector(1 downto 0);
+signal sensor_presencia_tb, clk_tb, reset_tb: std_logic;
+
+    begin
+        inst_Controlador_Puerta: Controlador_Puerta PORT MAP(
+            motor_puerta=>motor_puerta_tb,
+            sensor_presencia=>sensor_presencia_tb,
+            clk=>clk_tb,
+            reset=>reset_tb
+);
+clk_tb<= NOT clk_tb after 30ns;
+reset_tb<= '0','1' after 20ns,'0' after 60ns;
+sensor_presencia_tb<='1';
+    process
+        begin
+            wait for 70ns;
+            motor_puerta_tb<="01";
+            wait for 100ns;
+            motor_puerta_tb<="10";
+            wait for 130ns;
+            motor_puerta_tb<="11";
+    end process;
+
+
+end Behavioral;
