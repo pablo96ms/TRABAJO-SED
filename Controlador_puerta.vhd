@@ -22,7 +22,7 @@ Begin
 
 	Process (clk, sensor_presencia, reset) 
 
-		Variable cont: natural := 0; 
+		Variable cont: natural range 0 to 4; 
 		Begin 
 			if (reset ='1') then 
 				puerta_display <= "0001"; --Puerta cerrada, estado de inicio
