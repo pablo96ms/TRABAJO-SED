@@ -489,3 +489,353 @@ memoria:process(reset_n,clk) --en este process queremos capturar la pulsación d
 
 
 end Behavioral;
+
+
+
+
+
+
+
+
+
+
+ENTIDAD_TOP_FINAL Y TESTBENCH
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity top is
+    Port ( sensor_presencia : in STD_LOGIC;
+           reset : in STD_LOGIC;
+           stop_emergencia : in STD_LOGIC;
+           botones : in STD_LOGIC_VECTOR(3 DOWNTO 0);
+           clk : in STD_LOGIC;
+           display_number : out STD_LOGIC_VECTOR(6 DOWNTO 0);
+           Led_top: out STD_LOGIC_VECTOR(6 DOWNTO 0);
+           display_selection : out STD_LOGIC_VECTOR(5 DOWNTO 0));
+end top;
+
+architecture Structural of top is
+
+signal boton_bin_out: std_logic_vector(2 downto 0);
+signal clk_control_pisos_puerta: std_logic;
+signal clk_refresh_displays: std_logic;
+signal destino_fsm: std_logic_vector(2 downto 0);
+signal motor_puerta_fsm, motor_ascensor_fsm:std_logic_vector(1 downto 0);
+signal piso_actual: std_logic_vector(2 downto 0);
+signal puerta_display_top: std_logic_vector(3 downto 0);
+signal sensor_puerta_top: std_logic;
+signal piso_actual_display_top: std_logic_vector(6 downto 0);
+signal destino_display_top: std_logic_vector(6 downto 0);
+signal puerta_display_1: std_logic_vector(6 downto 0);
+signal puerta_display_2: std_logic_vector(6 downto 0);
+signal puerta_display_3: std_logic_vector(6 downto 0);
+signal puerta_display_4: std_logic_vector(6 downto 0);
+
+
+
+    component clk_divider is
+        generic(n:positive:=1000000);
+            Port ( clk : in STD_LOGIC;
+                   reset : in STD_LOGIC;
+                   clk_out : out STD_LOGIC);
+    end component;
+    
+    component Controlador_Pisos is
+            generic(N:natural:=3);
+                Port ( clk : in STD_LOGIC;
+                       reset : in STD_LOGIC;
+                       motor_ascensor : in STD_LOGIC_VECTOR (N-2 downto 0);
+                       piso_actual : out STD_LOGIC_VECTOR (N-1 downto 0));
+    end component;
+    
+    component Piso_actual_display is 
+        
+        Generic (N: integer:= 3);
+    
+        Port (
+            Piso_actual: IN std_logic_vector(N-1 downto 0);
+            Piso_actual_display: OUT std_logic_vector(6 downto 0)
+            );
+    
+    End component;
+    
+    component controlador_puerta is 
+    
+        Port (
+            motor_puerta: IN std_logic_vector(1 downto 0);
+            sensor_presencia, clk, reset: IN std_logic;
+            sensor_puerta: OUT std_logic;
+            puerta_display: OUT std_logic_vector (3 downto 0) --Manda al display el estado de la puerta a cada segundo
+            );
+    End component;    
+    
+    
+    component decoder_destino_display is 
+    
+        Generic (N: integer:= 4);
+    
+        Port (
+            destino_fsm: IN std_logic_vector(N-2 downto 0);
+            destino_display: OUT std_logic_vector(6 downto 0)
+            );
+    
+    End component;
+    
+    component decoder_motor_led is 
+    
+    Port (
+    
+            motor_ascensor : IN std_logic_vector(1 downto 0);
+            Led : OUT std_logic_vector(6 downto 0));
+    End component; 
+    
+    component display_refresh is 
+    
+        Port (
+            clk: IN std_logic; -- clk de más o menos 60 Hz o más 
+            pta_display_1, pta_display_2, pta_display_3, pta_display_4: IN std_logic_vector(6 downto 0);
+            destino_display: IN std_logic_vector(6 downto 0);
+            Piso_actual_display: IN std_logic_vector(6 downto 0);
+            display_selector: OUT std_logic_vector(5 downto 0);
+            display_number: OUT std_logic_vector(6 downto 0)
+             );
+    End component;
+    
+    component input_decoder is 
+        
+        Generic (N: natural := 4); -- Numero de pisos, por cada piso un boton 
+        Port (
+            boton_placa: IN std_logic_vector(N-1 downto 0);
+            boton_bin: OUT std_logic_vector(2 downto 0)
+            );
+    End component;
+    
+    component puerta_display_decoder1 is
+        Port (
+        puerta_display : IN std_logic_vector(3 downto 0);
+        pta_display_1: OUT std_logic_vector(6 downto 0)
+        );
+    end component;
+    
+    component puerta_display_decoder2 is
+            Port (
+            puerta_display : IN std_logic_vector(3 downto 0);
+            pta_display_2: OUT std_logic_vector(6 downto 0)
+            );
+        end component;
+        
+        component puerta_display_decoder3 is
+                Port (
+                puerta_display : IN std_logic_vector(3 downto 0);
+                pta_display_3: OUT std_logic_vector(6 downto 0)
+                );
+            end component;
+            
+        component puerta_display_decoder4 is
+                    Port (
+                    puerta_display : IN std_logic_vector(3 downto 0);
+                    pta_display_4: OUT std_logic_vector(6 downto 0)
+                    );
+        end component;
+                
+        
+        component state_machine is 
+        
+            Generic (N: natural:= 3);
+            Port (
+                sensor_puerta, stop_emergencia, reset, clk, sensor_presencia : IN std_logic;
+                -- sensor_puerta : 1 cerrada/ 0 abierta
+                -- sensor_presencia : 1 presencia/ 0 nadie 
+                -- Discutir la frecuencia del clk
+                --sensor_apertura: IN std_logic; 
+                boton_piso, piso_actual : IN std_logic_vector(N-1 downto 0); 
+                motor_puerta, motor_ascensor: OUT std_logic_vector(1 downto 0);
+                destino_fsm: OUT std_logic_vector (N-1 downto 0)
+                );
+        
+        End component;    
+    
+    
+begin
+
+inst_input_decoder: input_decoder generic map(N=>4) port map(
+boton_placa=>botones,
+boton_bin=>boton_bin_out
+);
+inst_clk_divider_control_pisos_puerta: clk_divider generic map (n=>100000000) port map(
+clk=>clk,
+reset=>reset,
+clk_out=>clk_control_pisos_puerta
+);
+inst_clk_divider_refresh_displays: clk_divider generic map(n=>2000000) port map(--frecuencia de 50hz pero se puede poner más sin problema
+clk=>clk,
+reset=>reset,
+clk_out=>clk_refresh_displays
+);
+inst_state_machine: state_machine generic map(N=>3) port map(
+sensor_puerta=>sensor_puerta_top,
+stop_emergencia=>stop_emergencia,
+reset=>reset,
+clk=>clk,
+sensor_presencia=>sensor_presencia,
+boton_piso=>boton_bin_out,--no estoy muy seguro de si está bien porque poseen rangos distintos
+piso_actual=>piso_actual,--salida controlador pisos
+motor_puerta=>motor_puerta_fsm,
+motor_ascensor=>motor_ascensor_fsm,
+destino_fsm=>destino_fsm
+);
+inst_contr_pisos: Controlador_Pisos generic map (N=>3) port map(
+clk=>clk_control_pisos_puerta,
+reset=>reset,
+motor_ascensor=>motor_ascensor_fsm,
+piso_actual=>piso_actual
+);
+inst_contr_puerta: Controlador_Puerta port map(
+motor_puerta=>motor_puerta_fsm,
+sensor_presencia=>sensor_presencia,
+clk=>clk_control_pisos_puerta,
+reset=>reset,
+sensor_puerta=>sensor_puerta_top,
+puerta_display=>puerta_display_top
+);
+inst_decoder_motor_led: decoder_motor_led port map(
+motor_ascensor=>motor_ascensor_fsm,
+Led=>Led_top
+);
+inst_Piso_actual_display: Piso_actual_display generic map (N=>3) port map(
+Piso_actual=>piso_actual,
+Piso_actual_display=>piso_actual_display_top
+);
+inst_decoder_destino_display: decoder_destino_display generic map(N=>4) port map(
+destino_fsm=>destino_fsm,
+destino_display=>destino_display_top
+);
+inst_pta_display_decod_1: puerta_display_decoder1 port map(
+puerta_display=>puerta_display_top,--PROBLEMA:puerta_display tiene 4 bits y puerta_display_top tiene 2 bits que vienen de la salida del controlador de la puerta
+pta_display_1=>puerta_display_1
+);
+inst_pta_display_decod_2: puerta_display_decoder2 port map(
+puerta_display=>puerta_display_top,--PROBLEMA:puerta_display tiene 4 bits y puerta_display_top tiene 2 bits que vienen de la salida del controlador de la puerta
+pta_display_2=>puerta_display_2
+);
+inst_pta_display_decod_3: puerta_display_decoder3 port map(
+puerta_display=>puerta_display_top,--PROBLEMA:puerta_display tiene 4 bits y puerta_display_top tiene 2 bits que vienen de la salida del controlador de la puerta
+pta_display_3=>puerta_display_3
+);
+inst_pta_display_decod_4: puerta_display_decoder4 port map(
+puerta_display=>puerta_display_top,--PROBLEMA:puerta_display tiene 4 bits y puerta_display_top tiene 2 bits que vienen de la salida del controlador de la puerta
+pta_display_4=>puerta_display_4
+);
+inst_refresh_displays: display_refresh port map(
+clk=>clk_refresh_displays,-- 50hz pero se pueden poner más
+pta_display_1=>puerta_display_1,
+pta_display_2=>puerta_display_2,
+pta_display_3=>puerta_display_3,
+pta_display_4=>puerta_display_4,
+destino_display=>destino_display_top,
+Piso_actual_display=>piso_actual_display_top,
+display_selector=>display_selection,
+display_number=>display_number
+);
+
+
+
+end Structural;
+
+
+
+
+
+TESTBENCH
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity tb_top is
+end tb_top;
+
+architecture tb of tb_top is
+
+    component top
+        port (sensor_presencia  : in std_logic;
+              reset             : in std_logic;
+              stop_emergencia   : in std_logic;
+              botones           : in std_logic_vector (3 downto 0);
+              clk               : in std_logic;
+              display_number    : out std_logic_vector (6 downto 0);
+              Led_top           : out std_logic_vector (6 downto 0);
+              display_selection : out std_logic_vector (5 downto 0));
+    end component;
+
+    signal sensor_presencia  : std_logic;
+    signal reset             : std_logic;
+    signal stop_emergencia   : std_logic;
+    signal botones           : std_logic_vector (3 downto 0);
+    signal clk               : std_logic;
+    signal display_number    : std_logic_vector (6 downto 0);
+    signal Led_top           : std_logic_vector (6 downto 0);
+    signal display_selection : std_logic_vector (5 downto 0);
+
+    constant TbPeriod : time := 1000 ns; -- EDIT Put right period here
+    signal TbClock : std_logic := '0';
+    signal TbSimEnded : std_logic := '0';
+
+begin
+
+    dut : top
+    port map (sensor_presencia  => sensor_presencia,
+              reset             => reset,
+              stop_emergencia   => stop_emergencia,
+              botones           => botones,
+              clk               => clk,
+              display_number    => display_number,
+              Led_top           => Led_top,
+              display_selection => display_selection);
+
+    -- Clock generation
+    TbClock <= not TbClock after TbPeriod/2 when TbSimEnded /= '1' else '0';
+
+    -- EDIT: Check that clk is really your main clock signal
+    clk <= TbClock;
+
+    stimuli : process
+    begin
+        -- EDIT Adapt initialization as needed
+        sensor_presencia <= '0';
+        stop_emergencia <= '0';
+        botones <= (others => '0');
+
+        -- Reset generation
+        -- EDIT: Check that reset is really your reset signal
+        reset <= '0';
+        wait for 100 ns;
+        reset <= '1';
+        wait for 100 ns;
+
+        -- EDIT Add stimuli here
+        wait for 100 * TbPeriod;
+
+        -- Stop the clock and hence terminate the simulation
+        TbSimEnded <= '1';
+        wait;
+    end process;
+
+end tb;
+
+-- Configuration block below is required by some simulators. Usually no need to edit.
+
+configuration cfg_tb_top of tb_top is
+    for tb
+    end for;
+end cfg_tb_top;
+
