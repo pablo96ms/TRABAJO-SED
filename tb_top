@@ -1,0 +1,120 @@
+----------------------------------------------------------------------------------
+-- Company: 
+-- Engineer: 
+-- 
+-- Create Date: 20.01.2019 20:09:45
+-- Design Name: 
+-- Module Name: tb_top - Behavioral
+-- Project Name: 
+-- Target Devices: 
+-- Tool Versions: 
+-- Description: 
+-- 
+-- Dependencies: 
+-- 
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+-- 
+----------------------------------------------------------------------------------
+
+
+-- Testbench automatically generated online
+-- at http://vhdl.lapinoo.net
+-- Generation date : 20.1.2019 23:52:23 GMT
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity tb_top is
+end tb_top;
+
+architecture tb of tb_top is
+
+    component top
+        port (sensor_presencia  : in std_logic;
+              RST         : in std_logic;
+              sensor_puerta_top     : buffer std_logic;
+              stop_emergencia   : in std_logic;
+              botones           : in std_logic_vector (3 downto 0);
+              CLOCK           : in std_logic;
+              display_number    : out std_logic_vector (6 downto 0);
+              Led_top           : out std_logic_vector (6 downto 0);
+              display_selection : out std_logic_vector (5 downto 0));
+    end component;
+
+    signal sensor_presencia  : std_logic:='0';
+    signal sensor_puerta     : std_logic:='0';
+    signal reset             : std_logic:='1';
+    signal stop_emergencia   : std_logic:='0';
+    signal botones           : std_logic_vector (3 downto 0):="0000";
+    signal clk               : std_logic:='0';
+    signal display_number    : std_logic_vector (6 downto 0):="0000000";
+    signal Led_top           : std_logic_vector (6 downto 0):="0000000";
+    signal display_selection : std_logic_vector (5 downto 0):="000000";
+
+    constant TbPeriod : time := 100 ns; -- EDIT Put right period here
+    signal TbClock : std_logic := '0';
+    signal TbSimEnded : std_logic := '0';
+
+begin
+
+    dut : top
+    port map (sensor_presencia  => sensor_presencia,
+              sensor_puerta_top     => sensor_puerta,
+              RST         => reset,
+              stop_emergencia   => stop_emergencia,
+              botones           => botones,
+              CLOCK           => clk,
+              display_number    => display_number,
+              Led_top           => Led_top,
+              display_selection => display_selection);
+
+    -- Clock generation
+    TbClock <= not TbClock after TbPeriod/2;-- when TbSimEnded /= '1' else '0';
+    stop_emergencia <='0' after 200ns, '1' after 250ns,'0' after 320ns;
+    -- EDIT: Check that clk is really your main clock signal
+    clk <= TbClock;
+
+    stimuli : process
+    begin
+        -- EDIT Adapt initialization as needed
+        wait for 40ns;
+        sensor_presencia <= '1';
+        sensor_puerta    <= '1';
+        --stop_emergencia <= '0';
+        botones <= "0001";
+        wait for 80ns;
+        sensor_presencia <= '0';
+        sensor_puerta    <= '1';
+        --stop_emergencia <= '0';
+        botones <= "0010";
+        wait for 130ns;
+        sensor_presencia <= '1';
+        sensor_puerta    <= '0';
+        --stop_emergencia <= '0';
+        botones <= "0011";
+
+        -- Reset generation
+        -- EDIT: Check that reset is really your reset signal
+        reset <= '0';
+        wait for 100 ns;
+        reset <= '1';
+        wait for 100 ns;
+
+        -- EDIT Add stimuli here
+        wait for 100 * TbPeriod;
+
+        -- Stop the clock and hence terminate the simulation
+        TbSimEnded <= '1';
+        wait;
+    end process;
+
+end tb;
+
+-- Configuration block below is required by some simulators. Usually no need to edit.
+
+configuration cfg_tb_top of tb_top is
+    for tb
+    end for;
+end cfg_tb_top;
