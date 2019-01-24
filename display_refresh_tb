@@ -1,0 +1,69 @@
+----------------------------------------------------------------------------------
+-- Company: 
+-- Engineer: 
+-- 
+-- Create Date: 28.12.2018 20:11:39
+-- Design Name: 
+-- Module Name: display_refresh_tb - Behavioral
+-- Project Name: 
+-- Target Devices: 
+-- Tool Versions: 
+-- Description: 
+-- 
+-- Dependencies: 
+-- 
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+-- 
+----------------------------------------------------------------------------------
+
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity display_refresh_tb is
+--  Port ( );
+end display_refresh_tb;
+
+architecture Behavioral of display_refresh_tb is
+component display_refresh is 
+
+	Port (
+		clk: IN std_logic; -- clk de m�s o menos 60 Hz o m�s 
+		pta_display_1, pta_display_2, pta_display_3, pta_display_4: IN std_logic_vector(6 downto 0);
+		destino_display: IN std_logic_vector(6 downto 0);
+		Piso_actual_display: IN std_logic_vector(6 downto 0);
+		display_selector: OUT std_logic_vector(5 downto 0);
+		display_number: OUT std_logic_vector(6 downto 0)
+		 );
+End component;
+
+signal clk_tb:std_logic;
+signal pta_display_1_tb, pta_display_2_tb, pta_display_3_tb, pta_display_4_tb, destino_display_tb,piso_actual_display_tb: std_logic_vector(6 downto 0);
+
+    begin
+        inst_display_refresh: display_refresh PORT MAP(
+        clk=>clk_tb,
+        pta_display_1=>pta_display_1_tb,
+        pta_display_2=>pta_display_2_tb,
+        pta_display_3=>pta_display_3_tb,
+        pta_display_4=>pta_display_4_tb,
+        destino_display=>destino_display_tb,
+        Piso_actual_display=>piso_actual_display_tb
+        );
+        clk_tb<= NOT clk_tb after 30ns;
+        
+    
+
+
+end Behavioral;
